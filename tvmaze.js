@@ -12795,10 +12795,11 @@ function getShowsByTerm(term) {
                 case 1:
                     response = _a.sent();
                     return [2 /*return*/, response.data.map(function (showInfo) {
+                            var _a;
                             return { id: showInfo.show.id,
                                 name: showInfo.show.name,
                                 summary: showInfo.show.summary,
-                                image: showInfo.show.image };
+                                image: ((_a = showInfo.show.image) === null || _a === void 0 ? void 0 : _a.medium) || 'https://tinyurl.com/tv-missing' };
                         })];
             }
         });
@@ -12809,9 +12810,7 @@ function populateShows(shows) {
     $showsList.empty();
     for (var _i = 0, shows_1 = shows; _i < shows_1.length; _i++) {
         var show = shows_1[_i];
-        // TODO: Uncaught (in promise) TypeError: Cannot read properties of null (reading 'medium')
-        var src = show.image.medium || 'https://tinyurl.com/tv-missing';
-        var $show = $("<div data-show-id=\"".concat(show.id, "\" class=\"Show col-md-12 col-lg-6 mb-4\">\n         <div class=\"media\">\n           <img\n              src=\"").concat(src, "\"\n              alt=\"Bletchly Circle San Francisco\"\n              class=\"w-25 me-3\">\n           <div class=\"media-body\">\n             <h5 class=\"text-primary\">").concat(show.name, "</h5>\n             <div><small>").concat(show.summary, "</small></div>\n             <button class=\"btn btn-outline-light btn-sm Show-getEpisodes\">\n               Episodes\n             </button>\n           </div>\n         </div>\n       </div>\n      "));
+        var $show = $("<div data-show-id=\"".concat(show.id, "\" class=\"Show col-md-12 col-lg-6 mb-4\">\n         <div class=\"media\">\n           <img\n              src=\"").concat(show.image, "\"\n              alt=\"Bletchly Circle San Francisco\"\n              class=\"w-25 me-3\">\n           <div class=\"media-body\">\n             <h5 class=\"text-primary\">").concat(show.name, "</h5>\n             <div><small>").concat(show.summary, "</small></div>\n             <button class=\"btn btn-outline-light btn-sm Show-getEpisodes\">\n               Episodes\n             </button>\n           </div>\n         </div>\n       </div>\n      "));
         $showsList.append($show);
     }
 }
@@ -12835,6 +12834,7 @@ function searchForShowAndDisplay() {
         });
     });
 }
+/** handleClick for searching for shows  */
 function handleSubmit(evt) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
@@ -12871,7 +12871,9 @@ function getEpisodesOfShow(id) {
         });
     });
 }
-/** Write a clear docstring for this function... */
+/** Givin an array  [EpisodeInterface, ...],
+ * populate the dom
+ */
 function populateEpisodes(episodes) {
     $episodesList.empty();
     for (var _i = 0, episodes_1 = episodes; _i < episodes_1.length; _i++) {
@@ -12881,14 +12883,25 @@ function populateEpisodes(episodes) {
     }
     $episodesArea.show();
 }
+/** Click handler for get episodes button
+ */
 function handleEpisodesClick(evt) {
     return __awaiter(this, void 0, void 0, function () {
+        var id, episodes;
         return __generator(this, function (_a) {
-            return [2 /*return*/];
+            switch (_a.label) {
+                case 0:
+                    id = $(evt.target).closest(".Show").data("show-id");
+                    return [4 /*yield*/, getEpisodesOfShow(id)];
+                case 1:
+                    episodes = _a.sent();
+                    populateEpisodes(episodes);
+                    return [2 /*return*/];
+            }
         });
     });
 }
-$showsList.on("click", handleEpisodesClick);
+$showsList.on("click", ".Show-getEpisodes", handleEpisodesClick);
 
 
 /***/ })
