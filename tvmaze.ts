@@ -3,8 +3,24 @@ import * as $ from 'jquery';
 
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
+const $episodesList = $("#episodesList");
 const $searchForm = $("#searchForm");
 
+const BASE_URL = 'https://api.tvmaze.com';
+
+interface ShowInterface {
+  id: number,
+  name: string,
+  summary: string,
+  image: {medium: string, original: string}
+}
+
+interface EpisodeInterface {
+  id: number,
+  name: string,
+  season: string,
+  number: string
+}
 
 /** Given a search term, search for tv shows that match that query.
  *
@@ -13,40 +29,48 @@ const $searchForm = $("#searchForm");
  *    (if no image URL given by API, put in a default image URL)
  */
 
-async function getShowsByTerm(term) {
+async function getShowsByTerm(term: string): Promise<ShowInterface[]> {
   // ADD: Remove placeholder & make request to TVMaze search shows API.
-  return [
-    {
-      id: 1767,
-      name: "The Bletchley Circle",
-      summary:
-        `<p><b>The Bletchley Circle</b> follows the journey of four ordinary
-           women with extraordinary skills that helped to end World War II.</p>
-         <p>Set in 1952, Susan, Millie, Lucy and Jean have returned to their
-           normal lives, modestly setting aside the part they played in
-           producing crucial intelligence, which helped the Allies to victory
-           and shortened the war. When Susan discovers a hidden code behind an
-           unsolved murder she is met by skepticism from the police. She
-           quickly realises she can only begin to crack the murders and bring
-           the culprit to justice with her former friends.</p>`,
-      image:
-          "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-    }
-  ]
+  const response = await axios.get(`${BASE_URL}/search/shows`, {params: {q: term}});
+  return response.data.map((showInfo: {score: number, show: ShowInterface}) => {
+    return {id: showInfo.show.id,
+            name: showInfo.show.name,
+            summary: showInfo.show.summary,
+            image: showInfo.show.image}});
+  // [
+  //   {
+  //     id: 1767,
+  //     name: "The Bletchley Circle",
+  //     summary:
+  //       `<p><b>The Bletchley Circle</b> follows the journey of four ordinary
+  //          women with extraordinary skills that helped to end World War II.</p>
+  //        <p>Set in 1952, Susan, Millie, Lucy and Jean have returned to their
+  //          normal lives, modestly setting aside the part they played in
+  //          producing crucial intelligence, which helped the Allies to victory
+  //          and shortened the war. When Susan discovers a hidden code behind an
+  //          unsolved murder she is met by skepticism from the police. She
+  //          quickly realises she can only begin to crack the murders and bring
+  //          the culprit to justice with her former friends.</p>`,
+  //     image:
+  //         "http://static.tvmaze.com/uploads/images/original_portrait/147/369403.jpg"
+  //   }
+  // ]
 }
 
 
 /** Given list of shows, create markup for each and to DOM */
 
-function populateShows(shows) {
+function populateShows(shows: ShowInterface[]) {
   $showsList.empty();
 
   for (let show of shows) {
+    // TODO: Uncaught (in promise) TypeError: Cannot read properties of null (reading 'medium')
+    const src = show.image.medium || 'https://tinyurl.com/tv-missing';
     const $show = $(
         `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img
-              src="http://static.tvmaze.com/uploads/images/medium_portrait/160/401704.jpg"
+              src="${src}"
               alt="Bletchly Circle San Francisco"
               class="w-25 me-3">
            <div class="media-body">
@@ -69,25 +93,50 @@ function populateShows(shows) {
  */
 
 async function searchForShowAndDisplay() {
-  const term = $("#searchForm-term").val();
-  const shows = await getShowsByTerm(term);
+  const term = $("#searchForm-term").val() as string;
+  const shows: ShowInterface[] = await getShowsByTerm(term);
 
   $episodesArea.hide();
   populateShows(shows);
 }
 
-$searchForm.on("submit", async function (evt) {
+async function handleSubmit(evt: JQuery.SubmitEvent): Promise<void> {
   evt.preventDefault();
   await searchForShowAndDisplay();
-});
+}
 
+$searchForm.on("submit", handleSubmit);
 
 /** Given a show ID, get from API and return (promise) array of episodes:
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id: number): Promise<EpisodeInterface[]> {
+  const response = await axios.get(`${BASE_URL}/shows/${id}/episodes`);
+  return response.data.map((episodeInfo: EpisodeInterface) => {
+    return {id: episodeInfo.id,
+            name: episodeInfo.name,
+            season: episodeInfo.season,
+            number: episodeInfo.number}});
+ }
 
 /** Write a clear docstring for this function... */
 
-// function populateEpisodes(episodes) { }
+function populateEpisodes(episodes: EpisodeInterface[]) {
+  $episodesList.empty();
+
+  for (let episode of episodes) {
+    const $episode = $(
+        `<li>${episode.name} (season ${episode.season}, number ${episode.number})</li>
+      `);
+
+    $episodesList.append($episode);  }
+
+  $episodesArea.show();
+ }
+
+
+async function handleEpisodesClick(evt: JQuery.ClickEvent): Promise<void> {
+}
+
+$showsList.on("click", handleEpisodesClick);
